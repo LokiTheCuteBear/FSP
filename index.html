@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+    <head>
+        <title>3D ASL Fingerspelling Practice</title>
+
+        <link rel="stylesheet" type="text/css" href="main.css">
+    </head>
+
+    <body>
+        <div id="ui-container">
+            <input type="text" id="guessword-input">
+            <button id="check-button" onClick="checkWordGuess()">Check</button>
+
+            <button onClick="setNewWordToGuess()">New Word</button>
+
+            <button id="play-button" onClick="initFingerspelling()">Play</button>
+            <button id="replay-button" onClick="initFingerspelling()">Replay</button>
+
+
+            <div id="score-display">Score: 0</div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r120/three.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r92/examples/js/loaders/GLTFLoader.js"></script>
+        <script src="main.js"></script>
+        <script src="fingerspellingMain.js"></script>
+    </body>
+</html>
