@@ -8,9 +8,14 @@ canvas {
 }
 
 #ui-container {
+    width: 300px;
+
     margin-top: 20%;
     margin-left: 10%;
     color: white;
+
+    display: flex;
+    flex-direction: column;
 }
 
 /*draw the ThreeJS canvas as background as to not influence the rest of UI elements*/
@@ -19,4 +24,35 @@ canvas {
     top: 0;
     left: 0;
     z-index : -1;
+}
+
+.sliderContainer {
+    width: 100%;
+}
+
+#word-input-container{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+#button-controls-container{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.control-button {
+    width: 200px;
+}
+
+.sliderContainer {
+    width: 100%;
+
+    display: flex;
+    flex-direction: row;
+  }
+  
+.control-slider {  
+    width: 100%;
 }

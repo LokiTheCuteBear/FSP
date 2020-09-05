@@ -7,21 +7,31 @@
 
     <body>
         <div id="ui-container">
-            <input type="text" id="guessword-input">
-            <button id="check-button" onClick="checkWordGuess()">Check</button>
-
-            <button onClick="setNewWordToGuess()">New Word</button>
-
-            <button id="play-button" onClick="initFingerspelling()">Play</button>
-            <button id="replay-button" onClick="initFingerspelling()">Replay</button>
-
 
             <div id="score-display">Score: 0</div>
+
+            <div id="word-input-container">
+                <input type="text" id="guessword-input">
+                <button id="check-button" onClick="checkWordGuess()">Check</button>
+            </div>
+            
+            <div id="button-controls-container">
+                <button class="control-button" onClick="setNewWordToGuess()">New Word</button>
+                <button class="control-button" id="play-button" onClick="initFingerspelling()">Play</button>
+            </div>
+            
+            <div class="sliderContainer">
+                <label for="speedSlider">Speed</label>
+                <input type="range" min="1" max="4" value="2" class="control-slider" id="speedSlider" oninput="updateSpeed()">
+            </div>
+            
+            <div class="sliderContainer">   
+                <label for="angleSlider">Angle</label>       
+                <input type="range" min="-180" max="180" value="0" class="control-slider" id="angleSlider" oninput="updateAngle()">
+            </div>
         </div>
 
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r120/three.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r92/examples/js/loaders/GLTFLoader.js"></script>
-        <script src="main.js"></script>
+        <script type="module" src="main.js"></script>
         <script src="fingerspellingMain.js"></script>
     </body>
 </html>

@@ -24,6 +24,8 @@ function setNewWordToGuess(){
 function checkWordGuess(){
     userGuess = userGuessInput.value;
 
+    //TODO: handle input for correct format before checking (toLowerCase, remove numbers and symbols)
+
     if(userGuess == wordToGuess){
         setNewWordToGuess();    
         score++;
@@ -35,6 +37,8 @@ function checkWordGuess(){
     //update UI elements
     userGuessInput.value = ""
     scoreDisplay.innerHTML = `Score: ${score}`
+
+    //TODO: check should animate items to reflect the guess
 }
 
 //handle users checking the word to guess by pressing the Enter key
@@ -50,5 +54,8 @@ function initFingerspelling(){
 
     //TODO: update UI elements to reflect animation in process
 }
+
+const updateSpeed = () => setAnimSpeed(document.getElementById("speedSlider").value);
+const updateAngle = () => setAnimAngle(document.getElementById("angleSlider").value);
 
 loadWordList();
