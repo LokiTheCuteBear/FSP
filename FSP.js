@@ -1,0 +1,392 @@
+import * as THREE from 'https://unpkg.com/three@0.120.1/build/three.module.js';
+import { GLTFLoader } from 'https://unpkg.com/three@0.120.1/examples/jsm/loaders/GLTFLoader';
+
+import { EffectComposer } from 'https://unpkg.com/three@0.120.1/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'https://unpkg.com/three@0.120.1/examples/jsm/postprocessing/RenderPass.js';
+import { SAOPass } from 'https://unpkg.com/three@0.120.1/examples/jsm/postprocessing/SAOPass.js';
+import { ShaderPass } from 'https://unpkg.com/three@0.120.1/examples/jsm/postprocessing/ShaderPass.js';
+import { SMAAPass } from 'https://unpkg.com/three@0.120.1/examples/jsm/postprocessing/SMAAPass.js';
+import { FilmShader } from 'https://unpkg.com/three@0.120.1/examples/jsm/shaders/FilmShader.js';
+
+let scene, camera, renderer, composer;
+let backgroundScene, backgroundCamera, backgroundRenderer, backgroundComposer;
+let idleAction, mesh, mixer, clock, deltaTime, clips;
+
+let isPlaying = false;
+let useHighQuality = true;
+let speedCoffs = [.5, 1, 2, 3];
+let speed = speedCoffs[1];
+
+function setQuality(newQuality) { useHighQuality = newQuality; }
+function setAnimSpeed(newSpeed) { speed = speedCoffs[newSpeed]; }
+function setHandAngle(newAngle) { mesh.rotation.y = THREE.MathUtils.degToRad(newAngle); }
+
+//================================================================================
+    // Setup - initalization, effects, and scene construction
+//================================================================================
+
+async function init(modelPath) {
+    let dimensions = recalculateDimensions();
+    let width = dimensions.width;
+    let height = dimensions.height;
+
+    clock = new THREE.Clock();
+
+    // set up background rendering
+    backgroundScene = new THREE.Scene();
+    
+    backgroundCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10);
+  
+    backgroundRenderer = new THREE.WebGLRenderer({antialias: true});
+    backgroundRenderer.setPixelRatio(window.devicePixelRatio);
+    backgroundRenderer.setSize(window.innerWidth, window.innerHeight);
+   
+    const backgroundCanvas = backgroundRenderer.domElement;
+    backgroundCanvas.setAttribute("class", "threejs-canvas");
+    document.body.appendChild(backgroundCanvas);
+
+    addGradientBackground();
+
+    // set up hand rendering
+    scene = new THREE.Scene();
+    
+    camera = new THREE.PerspectiveCamera(45, width /height, 1, 10);
+    camera.position.set(0, 1, 9);
+
+    try {
+        await addHandModel(modelPath);
+    } catch (err) {
+        return err;
+    }
+    
+    addLights();
+  
+    renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(width, height);
+    renderer.setClearColor(0x000000, 0);
+    
+    const canvas = renderer.domElement;
+    canvas.setAttribute("class", "threejs-canvas");
+    document.body.appendChild(canvas);
+    window.sceneLoaded = true;
+    
+    addEffects();
+}
+
+function addLights(){ 
+    let directionalLight = new THREE.DirectionalLight(0xFFFFFF, .5);
+    directionalLight.position.set(10, 0, 10);
+    scene.add(directionalLight);
+    
+    let hemiLight = new THREE.HemisphereLight(0xFFFFFF, 0xc4a880, 1);
+    scene.add(hemiLight);
+
+    let AmbientLight = new THREE.AmbientLight(0x404040, .7);
+    scene.add( AmbientLight );
+}
+
+function addEffects(){
+    composer = new EffectComposer(renderer);
+
+    let renderPass = new RenderPass(scene, camera); 
+    composer.addPass(renderPass);
+
+    let saoPass = new SAOPass( scene, camera, false, true);
+    saoPass.depthMaterial.skinning = true;
+    saoPass.depthMaterial.morphTargets = true;
+    saoPass.normalMaterial.skinning = true;
+    saoPass.normalMaterial.morphTargets = true;
+    saoPass.params.saoScale = 2;
+    saoPass.params.saoBias = 0.5;
+    saoPass.params.saoIntensity = 0.07;
+    saoPass.params.saoKernelRadius = 16;
+    saoPass.params.output = SAOPass.OUTPUT.Default;
+    composer.addPass(saoPass);
+
+    let smaaPass = new SMAAPass(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
+    composer.addPass(smaaPass);
+}
+
+function addGradientBackground() {
+    let backgroundCanvas = document.createElement("canvas");
+    backgroundCanvas.width = window.innerWidth;
+    backgroundCanvas.height = window.innerHeight;
+
+    let context = backgroundCanvas.getContext("2d");
+
+    let gradient = context.createRadialGradient(
+        window.innerWidth  / 2, 
+        window.innerHeight / 2, 
+        window.innerWidth  / 6, // inner radius
+        window.innerWidth  / 2, 
+        window.innerHeight / 2,  
+        window.innerHeight      // outer radius
+    );
+    gradient.addColorStop(0, "#4f4f4f");
+    gradient.addColorStop(1, "#303030");
+    
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, window.innerWidth, window.innerHeight);
+    
+    let backgroundTexture = new THREE.CanvasTexture(backgroundCanvas);
+    backgroundScene.background = backgroundTexture;
+
+    // add background post to create some noise
+    backgroundComposer = new EffectComposer(backgroundRenderer);
+
+    let renderPass = new RenderPass(backgroundScene, backgroundCamera); 
+    backgroundComposer.addPass(renderPass);
+
+    let filmPass = new ShaderPass(FilmShader);
+    filmPass.uniforms['nIntensity'].value = 0.2;
+    backgroundComposer.addPass(filmPass);
+}
+
+function addHandModel(path){
+    return new Promise((resolve, reject) => {   
+        const textureLoader = new THREE.TextureLoader();
+        let handDiffuse = textureLoader.load('textures/diffuse.jpg', texture => texture.flipY = false, undefined, error=>{reject(error)});
+        let handNormals = textureLoader.load('textures/normals_inverse_1k.png', texture => texture.flipY = false, undefined, error=>{reject(error)});        
+        let handSpecular = textureLoader.load('textures/roughness.jpg', texture => texture.flipY = false, undefined, error=>{reject(error)});  
+        
+        // load the hand model and set up animations
+        const loader = new GLTFLoader();
+        loader.load(
+            path,
+            object => {
+                mesh = object.scene;
+
+                let standardMaterial = new THREE.MeshStandardMaterial({
+                    depthWrite: true, 
+                    skinning: true,
+                    morphTargets: true,
+                    map: handDiffuse,
+                    normalMap: handNormals,
+                    roughnessMap: handSpecular
+                })
+                mesh.traverse(o => {if(o.isMesh) o.material = standardMaterial});
+
+                mixer = new THREE.AnimationMixer(mesh);
+                clips = object.animations;
+
+                //no clips except for idle will loop, hence set looping on load
+                clips.forEach(clip => {
+                    let action = mixer.clipAction(clip);
+                    action.loop = THREE.LoopOnce;
+                })
+
+                //start playing the idle animation from start
+                idleAction = mixer.clipAction( THREE.AnimationClip.findByName(clips, 'idle_loop'));
+                idleAction.loop = THREE.loop;
+                idleAction.play();
+
+                mesh.position.y -= 1.35;
+                mesh.position.z = 1.5;
+                
+                scene.add(mesh);
+
+                resolve();
+            },
+            xhr => {},
+            error => {reject(error);}
+        );
+    }); 
+}
+
+
+//================================================================================
+    // Fingerspelling animation
+//================================================================================
+
+function pushAction(sequence, actionName, timeScale, slide, slideDirection){
+    sequence.push({
+        action: mixer.clipAction(THREE.AnimationClip.findByName(clips, actionName)),
+        timeScale: timeScale,
+        slide: slide, 
+        slideDirection: slideDirection
+    });
+}
+
+function buildAnimSequence(word){
+    let actionSequence = [];
+    let lastActionAnOffset = false;
+
+    for(let i = 0; i < word.length; i++ ){
+        if(i == 0) { // first letter will always just be 'letter'_hand action
+            pushAction(actionSequence, `${word[i]}_hand`, 1, false, 1);
+        } else {  
+            let nextLetterSame = i+1 < word.length ? word[i] == word[i+1] : false;
+
+            //add transition to new letter    
+            // J and Z need special handling since their end pose is different to start
+            if (word[i] != 'j' && word[i] != 'z' && word[i-1] != 'j' && word[i-1] != 'z') {
+                let transActionA = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[i]}_${word[i-1]}_trans`));
+                let transActionB = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[i-1]}_${word[i]}_trans`));
+
+                if(transActionA) actionSequence.push({action: transActionA, timeScale: -1, slide: lastActionAnOffset, slideDirection: -1});
+                if(transActionB) actionSequence.push({action: transActionB, timeScale: 1, slide: lastActionAnOffset, slideDirection: -1});
+            } else {    
+                if (word[i] != word[i-1]) {
+                    let transAction = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[i-1]}_${word[i]}_trans`));
+                    actionSequence.push({action: transAction, timeScale: 1, slide: lastActionAnOffset, slideDirection: -1});     
+                }
+            }
+
+            // add smol buffer before sliding
+            if (word[i] != 'j' && word[i] != 'z') {
+                // add a smol buffer after transition back to hold the pose
+                if (lastActionAnOffset) {
+                    pushAction(actionSequence, `${word[i]}_hand`, 2, false, 1);
+                }
+
+                if (word[i-1] != 'j' && word[i-1] != 'z') pushAction(actionSequence, `${word[i]}_hand`, 2, false, 1);
+                pushAction(actionSequence, `${word[i]}_hand`, 1, nextLetterSame, 1);
+            } else {
+                pushAction(actionSequence, `${word[i]}_hand`, 1, false, 1);
+                if (nextLetterSame) pushAction(actionSequence, `${word[i]}_${word[i]}_trans`, 1, nextLetterSame, 1);
+            }
+
+            lastActionAnOffset = false;
+            if(word[i] == word[i-1]) lastActionAnOffset = true;
+        }
+    }
+ 
+    //pad the front of the sequence with transition from rest pose to the first letter
+    if (word[0] != 'j' && word[0] != 'z'){
+        let startActionA = mixer.clipAction(THREE.AnimationClip.findByName(clips, `rest_${word[0]}_trans`));  
+        let startActionB = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[0]}_rest_trans`));
+
+        if (startActionA) actionSequence = [{action: startActionA, timeScale: 1, slide: false, slideDirection: 1}].concat(actionSequence);   
+        if (startActionB) actionSequence = [{action: startActionB, timeScale: -1, slide: false, slideDirection: 1}].concat(actionSequence);
+    } else {
+        let startAction = mixer.clipAction(THREE.AnimationClip.findByName(clips, `rest_${word[0]}_trans`));  
+        actionSequence = [{action: startAction, timeScale: 1, slide: false, slideDirection: 1}].concat(actionSequence);
+    }
+
+    if (word[word.length-1] != 'j' && word[word.length-1] != 'z'){
+        let endActionA = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[word.length-1]}_rest_trans`));
+        let endActionB = mixer.clipAction(THREE.AnimationClip.findByName(clips, `rest_${word[word.length-1]}_trans`));
+
+        if(endActionA) actionSequence.push({action: endActionA, timeScale: 1, slide: false, slideDirection: -1});
+        if(endActionB) actionSequence.push({action: endActionB, timeScale: -1, slide: false, slideDirection: -1});
+    } else {
+        let endAction = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[word.length-1]}_rest_trans`));
+        actionSequence.push({action: endAction, timeScale: 1, slide: false, slideDirection: -1});
+    }
+
+    return actionSequence;
+}
+
+function fingerspell(word, onFinishCallback) { 
+    console.log(word)
+    let actionSequence = buildAnimSequence(word);
+    console.log(actionSequence)
+
+    isPlaying = true;
+    mixer.timeScale = speed;
+
+    //smoothly transition from the idle animation into the first transition
+    let action = actionSequence[0].action;   
+    action.time = action.getClip().duration * (actionSequence[0].timeScale < 0); 
+    action.timeScale = actionSequence[0].timeScale; 
+    action.play().crossFadeFrom(idleAction, action.getClip().duration/2, false);
+  
+    //add an event listener to play the next sequence animation after one completes
+    let index = 0;
+    mixer.addEventListener('finished', (e) => {       
+        // ignore additive slide finish
+        if (e.action._clip.name == 'slide') return;
+
+        e.action.stop();
+        index++;
+
+        if(index < actionSequence.length){
+            let action = actionSequence[index].action;   
+            
+            //change animation direction to accomodate inverted transitions
+            action.time = action.getClip().duration * (actionSequence[index].timeScale < 0); 
+            action.timeScale = actionSequence[index].timeScale; 
+
+            let clip = THREE.AnimationClip.findByName(clips, 'slide');
+            THREE.AnimationUtils.makeClipAdditive(clip);
+            let slideAction = mixer.clipAction(clip);  
+    
+            slideAction.loop = THREE.LoopOnce;
+            slideAction.clampWhenFinished = true;
+            slideAction.timeScale = actionSequence[index].slideDirection;
+
+            if (actionSequence[index].slide) {
+                slideAction.reset();
+
+                if(actionSequence[index].slideDirection == -1) 
+                    slideAction.time = slideAction.getClip().duration;
+                
+                slideAction.play();
+            }
+
+            action.play();
+            
+        }
+        
+        //transition back into the idle animation from the last transition
+        if(index == actionSequence.length){
+            mixer.timeScale = 1;
+            idleAction.enabled = true;
+            idleAction.paused = false;
+            idleAction.time = 0;
+            isPlaying = false;
+            onFinishCallback();
+        }
+    }); 
+}
+
+function animate() { 
+    requestAnimationFrame(animate);
+
+    deltaTime = clock.getDelta();
+    if(mixer) mixer.update(deltaTime);
+
+    if(useHighQuality) {
+        backgroundComposer.render();
+        composer.render();
+    } else {
+        if(backgroundRenderer) backgroundRenderer.render(backgroundScene, backgroundCamera);
+        renderer.render(scene, camera);
+    }
+}
+
+//================================================================================
+    // Resizing
+//================================================================================
+
+function handleWindowResize() {
+    let dimensions = recalculateDimensions();
+    let width = dimensions.width;
+    let height = dimensions.height;
+   
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+
+    backgroundCamera.aspect = window.innerWidth, window.innerHeight;
+    backgroundCamera.updateProjectionMatrix();
+
+    backgroundRenderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(width, height);
+
+    backgroundComposer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(width, height);
+}
+
+// preserve aspect ratio for mobile/vertical displays so the hand would always have room for slide animations
+function recalculateDimensions(){
+    let lowerAspect = 1.07;
+    return {
+        width: window.innerWidth,
+        height:  window.innerWidth / window.innerHeight <= lowerAspect ? (window.innerWidth / lowerAspect)*0.8 : window.innerHeight
+    };
+}
+
+window.addEventListener('resize', handleWindowResize, false);
+
+export {init, animate, fingerspell, setHandAngle, setAnimSpeed, setQuality};
