@@ -21,10 +21,6 @@ function setQuality(newQuality) { useHighQuality = newQuality; }
 function setAnimSpeed(newSpeed) { speed = speedCoffs[newSpeed]; }
 function setHandAngle(newAngle) { mesh.rotation.y = THREE.MathUtils.degToRad(newAngle); }
 
-//================================================================================
-    // Setup - initalization, effects, and scene construction
-//================================================================================
-
 async function init(modelPath) {
     let dimensions = recalculateDimensions();
     let width = dimensions.width;
@@ -32,25 +28,23 @@ async function init(modelPath) {
 
     clock = new THREE.Clock();
 
-    // set up background rendering
     backgroundScene = new THREE.Scene();
-    
+
     backgroundCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10);
-  
-    backgroundRenderer = new THREE.WebGLRenderer({antialias: true});
+
+    backgroundRenderer = new THREE.WebGLRenderer({ antialias: true });
     backgroundRenderer.setPixelRatio(window.devicePixelRatio);
     backgroundRenderer.setSize(window.innerWidth, window.innerHeight);
-   
+
     const backgroundCanvas = backgroundRenderer.domElement;
     backgroundCanvas.setAttribute("class", "threejs-canvas");
     document.body.appendChild(backgroundCanvas);
 
     addGradientBackground();
 
-    // set up hand rendering
     scene = new THREE.Scene();
-    
-    camera = new THREE.PerspectiveCamera(45, width /height, 1, 10);
+
+    camera = new THREE.PerspectiveCamera(45, width / height, 1, 10);
     camera.position.set(0, 1, 9);
 
     try {
@@ -58,41 +52,41 @@ async function init(modelPath) {
     } catch (err) {
         return err;
     }
-    
+
     addLights();
-  
-    renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(width, height);
     renderer.setClearColor(0x000000, 0);
-    
+
     const canvas = renderer.domElement;
     canvas.setAttribute("class", "threejs-canvas");
     document.body.appendChild(canvas);
     window.sceneLoaded = true;
-    
+
     addEffects();
 }
 
-function addLights(){ 
+function addLights() {
     let directionalLight = new THREE.DirectionalLight(0xFFFFFF, .5);
     directionalLight.position.set(10, 0, 10);
     scene.add(directionalLight);
-    
+
     let hemiLight = new THREE.HemisphereLight(0xFFFFFF, 0xc4a880, 1);
     scene.add(hemiLight);
 
     let AmbientLight = new THREE.AmbientLight(0x404040, .7);
-    scene.add( AmbientLight );
+    scene.add(AmbientLight);
 }
 
-function addEffects(){
+function addEffects() {
     composer = new EffectComposer(renderer);
 
-    let renderPass = new RenderPass(scene, camera); 
+    let renderPass = new RenderPass(scene, camera);
     composer.addPass(renderPass);
 
-    let saoPass = new SAOPass( scene, camera, false, true);
+    let saoPass = new SAOPass(scene, camera, false, true);
     saoPass.depthMaterial.skinning = true;
     saoPass.depthMaterial.morphTargets = true;
     saoPass.normalMaterial.skinning = true;
@@ -116,26 +110,27 @@ function addGradientBackground() {
     let context = backgroundCanvas.getContext("2d");
 
     let gradient = context.createRadialGradient(
-        window.innerWidth  / 2, 
-        window.innerHeight / 2, 
-        window.innerWidth  / 6, // inner radius
-        window.innerWidth  / 2, 
-        window.innerHeight / 2,  
+        window.innerWidth / 2,
+        window.innerHeight / 2,
+        window.innerWidth / 6, // inner radius
+        window.innerWidth / 2,
+        window.innerHeight / 2,
         window.innerHeight      // outer radius
     );
+
     gradient.addColorStop(0, "#4f4f4f");
     gradient.addColorStop(1, "#303030");
-    
+
     context.fillStyle = gradient;
     context.fillRect(0, 0, window.innerWidth, window.innerHeight);
-    
+
     let backgroundTexture = new THREE.CanvasTexture(backgroundCanvas);
     backgroundScene.background = backgroundTexture;
 
     // add background post to create some noise
     backgroundComposer = new EffectComposer(backgroundRenderer);
 
-    let renderPass = new RenderPass(backgroundScene, backgroundCamera); 
+    let renderPass = new RenderPass(backgroundScene, backgroundCamera);
     backgroundComposer.addPass(renderPass);
 
     let filmPass = new ShaderPass(FilmShader);
@@ -143,13 +138,13 @@ function addGradientBackground() {
     backgroundComposer.addPass(filmPass);
 }
 
-function addHandModel(path){
-    return new Promise((resolve, reject) => {   
+function addHandModel(path) {
+    return new Promise((resolve, reject) => {
         const textureLoader = new THREE.TextureLoader();
-        let handDiffuse = textureLoader.load('textures/diffuse.jpg', texture => texture.flipY = false, undefined, error=>{reject(error)});
-        let handNormals = textureLoader.load('textures/normals_inverse_1k.png', texture => texture.flipY = false, undefined, error=>{reject(error)});        
-        let handSpecular = textureLoader.load('textures/roughness.jpg', texture => texture.flipY = false, undefined, error=>{reject(error)});  
-        
+        let handDiffuse = textureLoader.load('textures/diffuse.jpg', texture => texture.flipY = false, undefined, error => { reject(error) });
+        let handNormals = textureLoader.load('textures/normals_inverse_1k.png', texture => texture.flipY = false, undefined, error => { reject(error) });
+        let handSpecular = textureLoader.load('textures/roughness.jpg', texture => texture.flipY = false, undefined, error => { reject(error) });
+
         // load the hand model and set up animations
         const loader = new GLTFLoader();
         loader.load(
@@ -158,14 +153,14 @@ function addHandModel(path){
                 mesh = object.scene;
 
                 let standardMaterial = new THREE.MeshStandardMaterial({
-                    depthWrite: true, 
+                    depthWrite: true,
                     skinning: true,
                     morphTargets: true,
                     map: handDiffuse,
                     normalMap: handNormals,
                     roughnessMap: handSpecular
                 })
-                mesh.traverse(o => {if(o.isMesh) o.material = standardMaterial});
+                mesh.traverse(o => { if (o.isMesh) o.material = standardMaterial });
 
                 mixer = new THREE.AnimationMixer(mesh);
                 clips = object.animations;
@@ -177,59 +172,63 @@ function addHandModel(path){
                 })
 
                 //start playing the idle animation from start
-                idleAction = mixer.clipAction( THREE.AnimationClip.findByName(clips, 'idle_loop'));
+                idleAction = mixer.clipAction(THREE.AnimationClip.findByName(clips, 'idle_loop'));
                 idleAction.loop = THREE.loop;
                 idleAction.play();
 
                 mesh.position.y -= 1.35;
                 mesh.position.z = 1.5;
-                
+
                 scene.add(mesh);
 
                 resolve();
             },
-            xhr => {},
-            error => {reject(error);}
+            xhr => { },
+            error => { reject(error); }
         );
-    }); 
-}
-
-
-//================================================================================
-    // Fingerspelling animation
-//================================================================================
-
-function pushAction(sequence, actionName, timeScale, slide, slideDirection){
-    sequence.push({
-        action: mixer.clipAction(THREE.AnimationClip.findByName(clips, actionName)),
-        timeScale: timeScale,
-        slide: slide, 
-        slideDirection: slideDirection
     });
 }
 
-function buildAnimSequence(word){
+function pushAction(sequence, actionName, timeScale, slide, slideDirection, addToStart) {
+    let action = mixer.clipAction(THREE.AnimationClip.findByName(clips, actionName));
+    if (action) {
+        if (!addToStart) {
+            sequence.push({
+                action: action,
+                timeScale: timeScale,
+                slide: slide,
+                slideDirection: slideDirection
+            });
+        } else {
+            sequence.unshift({
+                action: action,
+                timeScale: timeScale,
+                slide: slide,
+                slideDirection: slideDirection
+            });
+        }
+    }
+}
+
+function buildAnimSequence(word) {
     let actionSequence = [];
     let lastActionAnOffset = false;
 
-    for(let i = 0; i < word.length; i++ ){
-        if(i == 0) { // first letter will always just be 'letter'_hand action
-            pushAction(actionSequence, `${word[i]}_hand`, 1, false, 1);
-        } else {  
-            let nextLetterSame = i+1 < word.length ? word[i] == word[i+1] : false;
+    for (let i = 0; i < word.length; i++) {
+        if (i == 0) { // first letter will always just be 'letter'_hand action
+            pushAction(actionSequence, `${word[i]}_hand`, 1, false, 1, false);
+        } else {
+            let nextLetterSame = i + 1 < word.length ? word[i] == word[i + 1] : false;
 
-            //add transition to new letter    
+            // add transition to new letter    
             // J and Z need special handling since their end pose is different to start
-            if (word[i] != 'j' && word[i] != 'z' && word[i-1] != 'j' && word[i-1] != 'z') {
-                let transActionA = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[i]}_${word[i-1]}_trans`));
-                let transActionB = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[i-1]}_${word[i]}_trans`));
-
-                if(transActionA) actionSequence.push({action: transActionA, timeScale: -1, slide: lastActionAnOffset, slideDirection: -1});
-                if(transActionB) actionSequence.push({action: transActionB, timeScale: 1, slide: lastActionAnOffset, slideDirection: -1});
-            } else {    
-                if (word[i] != word[i-1]) {
-                    let transAction = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[i-1]}_${word[i]}_trans`));
-                    actionSequence.push({action: transAction, timeScale: 1, slide: lastActionAnOffset, slideDirection: -1});     
+            // we're pushing an action twice expecting only one to be pushed - this rides on assumptions on what animations are present
+            if (word[i] != 'j' && word[i] != 'z' && word[i - 1] != 'j' && word[i - 1] != 'z') {
+                pushAction(actionSequence, `${word[i]}_${word[i - 1]}_trans`, -1, lastActionAnOffset, -1, false);
+                pushAction(actionSequence, `${word[i - 1]}_${word[i]}_trans`, 1, lastActionAnOffset, -1, false);
+            } else {
+                if (word[i] != word[i - 1]) {
+                    pushAction(actionSequence, `${word[i - 1]}_${word[i]}_trans`, 1, lastActionAnOffset, -1, false);
                 }
             }
 
@@ -237,48 +236,40 @@ function buildAnimSequence(word){
             if (word[i] != 'j' && word[i] != 'z') {
                 // add a smol buffer after transition back to hold the pose
                 if (lastActionAnOffset) {
-                    pushAction(actionSequence, `${word[i]}_hand`, 2, false, 1);
+                    pushAction(actionSequence, `${word[i]}_hand`, 2, false, 1, false);
                 }
 
-                if (word[i-1] != 'j' && word[i-1] != 'z') pushAction(actionSequence, `${word[i]}_hand`, 2, false, 1);
-                pushAction(actionSequence, `${word[i]}_hand`, 1, nextLetterSame, 1);
+                if (word[i - 1] != 'j' && word[i - 1] != 'z') pushAction(actionSequence, `${word[i]}_hand`, 2, false, 1, false);
+                pushAction(actionSequence, `${word[i]}_hand`, 1, nextLetterSame, 1, false);
             } else {
-                pushAction(actionSequence, `${word[i]}_hand`, 1, false, 1);
-                if (nextLetterSame) pushAction(actionSequence, `${word[i]}_${word[i]}_trans`, 1, nextLetterSame, 1);
+                pushAction(actionSequence, `${word[i]}_hand`, 1, false, 1, false);
+                if (nextLetterSame) pushAction(actionSequence, `${word[i]}_${word[i]}_trans`, 1, nextLetterSame, 1, false);
             }
 
             lastActionAnOffset = false;
-            if(word[i] == word[i-1]) lastActionAnOffset = true;
+            if (word[i] == word[i - 1]) lastActionAnOffset = true;
         }
     }
- 
-    //pad the front of the sequence with transition from rest pose to the first letter
-    if (word[0] != 'j' && word[0] != 'z'){
-        let startActionA = mixer.clipAction(THREE.AnimationClip.findByName(clips, `rest_${word[0]}_trans`));  
-        let startActionB = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[0]}_rest_trans`));
 
-        if (startActionA) actionSequence = [{action: startActionA, timeScale: 1, slide: false, slideDirection: 1}].concat(actionSequence);   
-        if (startActionB) actionSequence = [{action: startActionB, timeScale: -1, slide: false, slideDirection: 1}].concat(actionSequence);
+    //pad the front end end of the sequence with rest pose transitions
+    if (word[0] != 'j' && word[0] != 'z') {
+        pushAction(actionSequence, `rest_${word[0]}_trans`, 1, false, 1, true);
+        pushAction(actionSequence, `${word[0]}_rest_trans`, -1, false, 1, true);
     } else {
-        let startAction = mixer.clipAction(THREE.AnimationClip.findByName(clips, `rest_${word[0]}_trans`));  
-        actionSequence = [{action: startAction, timeScale: 1, slide: false, slideDirection: 1}].concat(actionSequence);
+        pushAction(actionSequence, `rest_${word[0]}_trans`, 1, false, 1, true);
     }
 
-    if (word[word.length-1] != 'j' && word[word.length-1] != 'z'){
-        let endActionA = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[word.length-1]}_rest_trans`));
-        let endActionB = mixer.clipAction(THREE.AnimationClip.findByName(clips, `rest_${word[word.length-1]}_trans`));
-
-        if(endActionA) actionSequence.push({action: endActionA, timeScale: 1, slide: false, slideDirection: -1});
-        if(endActionB) actionSequence.push({action: endActionB, timeScale: -1, slide: false, slideDirection: -1});
+    if (word[word.length - 1] != 'j' && word[word.length - 1] != 'z') {
+        pushAction(actionSequence, `${word[word.length - 1]}_rest_trans`, 1, false, -1, false);
+        pushAction(actionSequence, `rest_${word[word.length - 1]}_trans`, -1, false, -1, false);
     } else {
-        let endAction = mixer.clipAction(THREE.AnimationClip.findByName(clips, `${word[word.length-1]}_rest_trans`));
-        actionSequence.push({action: endAction, timeScale: 1, slide: false, slideDirection: -1});
+        pushAction(actionSequence, `${word[word.length - 1]}_rest_trans`, 1, false, -1, false);
     }
 
     return actionSequence;
 }
 
-function fingerspell(word, onFinishCallback) { 
+function fingerspell(word, onFinishCallback) {
     console.log(word)
     let actionSequence = buildAnimSequence(word);
     console.log(actionSequence)
@@ -287,50 +278,46 @@ function fingerspell(word, onFinishCallback) {
     mixer.timeScale = speed;
 
     //smoothly transition from the idle animation into the first transition
-    let action = actionSequence[0].action;   
-    action.time = action.getClip().duration * (actionSequence[0].timeScale < 0); 
-    action.timeScale = actionSequence[0].timeScale; 
-    action.play().crossFadeFrom(idleAction, action.getClip().duration/2, false);
-  
+    let action = actionSequence[0].action;
+    action.time = action.getClip().duration * (actionSequence[0].timeScale < 0);
+    action.timeScale = actionSequence[0].timeScale;
+    action.play().crossFadeFrom(idleAction, action.getClip().duration / 2, false);
+
     //add an event listener to play the next sequence animation after one completes
     let index = 0;
-    mixer.addEventListener('finished', (e) => {       
+    mixer.addEventListener('finished', (e) => {
         // ignore additive slide finish
         if (e.action._clip.name == 'slide') return;
 
         e.action.stop();
         index++;
 
-        if(index < actionSequence.length){
-            let action = actionSequence[index].action;   
-            
+        if (index < actionSequence.length) {
+            let action = actionSequence[index].action;
+
             //change animation direction to accomodate inverted transitions
-            action.time = action.getClip().duration * (actionSequence[index].timeScale < 0); 
-            action.timeScale = actionSequence[index].timeScale; 
+            action.time = action.getClip().duration * (actionSequence[index].timeScale < 0);
+            action.timeScale = actionSequence[index].timeScale;
 
             let clip = THREE.AnimationClip.findByName(clips, 'slide');
             THREE.AnimationUtils.makeClipAdditive(clip);
-            let slideAction = mixer.clipAction(clip);  
-    
+            let slideAction = mixer.clipAction(clip);
+
             slideAction.loop = THREE.LoopOnce;
             slideAction.clampWhenFinished = true;
             slideAction.timeScale = actionSequence[index].slideDirection;
 
             if (actionSequence[index].slide) {
                 slideAction.reset();
-
-                if(actionSequence[index].slideDirection == -1) 
-                    slideAction.time = slideAction.getClip().duration;
-                
+                if (actionSequence[index].slideDirection == -1) slideAction.time = slideAction.getClip().duration;
                 slideAction.play();
             }
 
             action.play();
-            
         }
-        
+
         //transition back into the idle animation from the last transition
-        if(index == actionSequence.length){
+        if (index == actionSequence.length) {
             mixer.timeScale = 1;
             idleAction.enabled = true;
             idleAction.paused = false;
@@ -338,33 +325,29 @@ function fingerspell(word, onFinishCallback) {
             isPlaying = false;
             onFinishCallback();
         }
-    }); 
+    });
 }
 
-function animate() { 
+function animate() {
     requestAnimationFrame(animate);
 
     deltaTime = clock.getDelta();
-    if(mixer) mixer.update(deltaTime);
+    if (mixer) mixer.update(deltaTime);
 
-    if(useHighQuality) {
+    if (useHighQuality) {
         backgroundComposer.render();
         composer.render();
     } else {
-        if(backgroundRenderer) backgroundRenderer.render(backgroundScene, backgroundCamera);
+        if (backgroundRenderer) backgroundRenderer.render(backgroundScene, backgroundCamera);
         renderer.render(scene, camera);
     }
 }
-
-//================================================================================
-    // Resizing
-//================================================================================
 
 function handleWindowResize() {
     let dimensions = recalculateDimensions();
     let width = dimensions.width;
     let height = dimensions.height;
-   
+
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
@@ -379,14 +362,14 @@ function handleWindowResize() {
 }
 
 // preserve aspect ratio for mobile/vertical displays so the hand would always have room for slide animations
-function recalculateDimensions(){
+function recalculateDimensions() {
     let lowerAspect = 1.07;
     return {
         width: window.innerWidth,
-        height:  window.innerWidth / window.innerHeight <= lowerAspect ? (window.innerWidth / lowerAspect)*0.8 : window.innerHeight
+        height: window.innerWidth / window.innerHeight <= lowerAspect ? (window.innerWidth / lowerAspect) * 0.8 : window.innerHeight
     };
 }
 
 window.addEventListener('resize', handleWindowResize, false);
 
-export {init, animate, fingerspell, setHandAngle, setAnimSpeed, setQuality};
+export { init, animate, fingerspell, setHandAngle, setAnimSpeed, setQuality };
