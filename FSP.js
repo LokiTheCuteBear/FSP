@@ -251,7 +251,7 @@ function buildAnimSequence(word) {
         }
     }
 
-    //pad the front end end of the sequence with rest pose transitions
+    //pad the front and end of the sequence with rest pose transitions
     if (word[0] != 'j' && word[0] != 'z') {
         pushAction(actionSequence, `rest_${word[0]}_trans`, 1, false, 1, true);
         pushAction(actionSequence, `${word[0]}_rest_trans`, -1, false, 1, true);
@@ -259,11 +259,13 @@ function buildAnimSequence(word) {
         pushAction(actionSequence, `rest_${word[0]}_trans`, 1, false, 1, true);
     }
 
+    let lastTwoLettersSame = word[word.length - 1] == word[word.length - 2];
+
     if (word[word.length - 1] != 'j' && word[word.length - 1] != 'z') {
-        pushAction(actionSequence, `${word[word.length - 1]}_rest_trans`, 1, false, -1, false);
-        pushAction(actionSequence, `rest_${word[word.length - 1]}_trans`, -1, false, -1, false);
+        pushAction(actionSequence, `${word[word.length - 1]}_rest_trans`, 1, lastTwoLettersSame, -1, false);
+        pushAction(actionSequence, `rest_${word[word.length - 1]}_trans`, -1, lastTwoLettersSame, -1, false);
     } else {
-        pushAction(actionSequence, `${word[word.length - 1]}_rest_trans`, 1, false, -1, false);
+        pushAction(actionSequence, `${word[word.length - 1]}_rest_trans`, 1, lastTwoLettersSame, -1, false);
     }
 
     return actionSequence;
