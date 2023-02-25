@@ -7,11 +7,10 @@
         <link rel="stylesheet" type="text/css" href="css/main.css">
         <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 
-        <script defer type="module" src="main.js"></script>
+        <script defer type="module" src="./src/main.js"></script>
     </head>
 
     <body>
-
         <div id="loading-overlay-container">
             <div id="spinner-container">
                 <div class="lds-ring" id="lds-ring"><div></div><div></div><div></div><div></div></div>
@@ -23,7 +22,7 @@
         </div>
 
         <div class="ui-container fadeable" id="ui-container">
-            <div class="ui-content" id="ui-content" displayState="">
+            <div class="ui-content" id="ui-content">
                 
                 <div class="score-display-container" id="score-display-container">
                     <div id="score-display">Score: 0</div>
@@ -40,7 +39,7 @@
 
                 <div class="button-controls-container" id="button-controls-container">
                     <button class="button control-button" id="new-word-button">New Word</button>
-                    <button class="button control-button" id="play-button">Fingerspell</button>
+                    <button class="button control-button fingerspell-button" id="play-button">Fingerspell</button>
                 </div>
 
                 <div class="collapsible" id="settings-collapsible">
@@ -88,7 +87,7 @@
                         This tool is for practice purposes only and should not be used for learning ASL. 
                         It is yet to be reviewed by a qualified source and should be viewed only as a technical demo until further notice.
                     </p>
-                    <table class="yellow" style="width:70%; margin-left: auto; margin-right: auto;">
+                    <table class="yellow" style="width:70%; margin-left: auto; margin-right: auto; margin-bottom: 20px;">
                         <tr>
                             <td>New Word</th>
                             <td style="text-align: right;">Alt + R</th> 
@@ -126,14 +125,12 @@
                 
             </div>
             
-            <div class="notice-container" id="notice-container">
-                <p style="margin: 0 20px 5px 0">
-                    v0.1.0 - developed by <a href="https://linktr.ee/LokiBear" target="_blank" rel="noopener noreferrer">Loki Bear</a> -  
+            <div class="notice-container" id="notice-container" style="display: inline">
+                <p style="margin: 0 20px 5px 20px;">
+                    v0.2.0 - developed by <a href="https://linktr.ee/LokiBear" target="_blank" rel="noopener noreferrer">Loki Bear</a> -  
                     source code available on <a href="" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </p>
            </div>
-
         </div>
-    
     </body>
 </html>

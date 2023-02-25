@@ -1,10 +1,29 @@
+html {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: 'Helvetica', 'Arial', sans-serif;
   font-size: 1em;
   margin: 0;
+  padding: 0;
   background-color: #303030;
   color: whitesmoke;
   user-select: none;
+  width: 100%;
+  height: 100%;
+}
+
+.fingerspell-button {
+  color: black !important;
+  background-color: whitesmoke !important;
+}
+
+.fingerspell-button:hover {
+  background-color: rgba(255, 255, 255, 0.685) !important;
 }
 
 a:link {
@@ -54,8 +73,10 @@ canvas {
 .ui-content {
   width: 100%;
   max-width: 550px;
-  padding: 20px;
-  margin-left: auto;
+  margin: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  /* margin-left: auto; */
   border-radius: 10px;
   background: rgb(26,26,26);
   background: linear-gradient(90deg, rgba(26,26,26,0.6334908963585435) 0%, rgba(102,102,96,0.2329306722689075) 100%);
@@ -63,6 +84,9 @@ canvas {
 
 .ui-content-mobile {
   margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
   width: 90% !important;
   margin-bottom: 100px !important;
 }
@@ -70,12 +94,19 @@ canvas {
 .notice-container {
   position: absolute;
   color:rgb(165, 165, 165);
-  width: 500px;
   right: 0;
   bottom: 0;
+  width: 100%;
+  max-width: 600px;
+  text-align: right;
 }
 
-.notice-container-center { right: calc(50% - 270px) !important; }
+/* ????? */
+.notice-container-center {
+   right: auto;
+   text-align: center;
+  /* right: calc(50% - 270px) !important;  */
+}
 
 .score-display-container {
   display: flex;
@@ -118,6 +149,7 @@ canvas {
 .check-button { 
   width: 7em;
   border-radius: 0em 2em 2em 0em;
+  border-color: grey !important;
 }
 
 .control-button {
@@ -129,7 +161,7 @@ canvas {
 }
 
 .button {
-  font-size: 1.2em;
+  font-size: 1.1em;
   border-width: thin !important;
   border: white;
   color: white;
@@ -183,7 +215,7 @@ canvas {
 
 #guessword-input:focus {
   outline: none;
-  border-color: white rgba(0,0,0,0) white white;
+  border-color: white;
 }
 
 hr { 
@@ -300,7 +332,7 @@ hr {
   color:rgb(165, 165, 165);
   right: 15%;
   bottom: 53%;
-  width: 300px;
+  max-width: 300px;
   height: 20px;
 }
 

@@ -4,9 +4,10 @@ let wordToGuess;
 let wordList = [];
 let score = 0;
 let useHighQuality = true;
-let speedValues = ['Slow', 'Medium', 'Fast', 'Very Fast'];
 let currentlyPlaying = false;
 let userGuessInputIsFocused = false;
+
+const speedValues = ['Slow', 'Medium', 'Fast', 'Very Fast'];
 
 const userGuessInput = document.getElementById('guessword-input');
 const scoreDisplay = document.getElementById('score-display');
@@ -54,7 +55,7 @@ function resizeUI() {
     let height = window.innerHeight;
     let aspect = width / height;
 
-    if (aspect > aspectUpper) { // wide display
+    if (aspect > aspectUpper && width >= 1000) { // wide display
         uiContent.classList.remove('ui-content-mobile');
         uiContainer.classList.remove('ui-container-mobile');
         uiContainer.style.width = `${(width - height * 0.52) / 2}px`;
@@ -64,7 +65,7 @@ function resizeUI() {
         feedbackContainer.classList.add('feedback-container');
 
         noticeContainer.classList.remove('notice-container-center');
-    } else if (aspect < aspectLower) { // mobile display
+    } else if (aspect < aspectLower || width < 1000) { // mobile display
         uiContainer.classList.add('ui-container-mobile');
         uiContent.classList.add('ui-content-mobile');
         uiContainer.style.width = '100%';
@@ -285,6 +286,7 @@ lowQualityButton.addEventListener('click', () => toggleQualitySelection(lowQuali
 
 function updateCollapsibleMaxHeight(content, arrow) {
     content.style.maxHeight = !arrow.classList.contains('open') ? null : content.scrollHeight + 'px';
+    FSP.handleWindowResize();
 }
 
 function toggleCollapsible(content, arrow) {
@@ -441,6 +443,8 @@ async function init() {
     setTimeout(() => {
         toggleCollapsible(settingsCollapsibleContent, settingsArrow);
         toggleCollapsible(infoCollapsibleContent, infoArrow);
+
+        FSP.handleWindowResize();
     }, 500);
 }
 

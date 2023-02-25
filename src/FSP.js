@@ -30,11 +30,11 @@ async function init(modelPath) {
 
     backgroundScene = new THREE.Scene();
 
-    backgroundCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10);
+    backgroundCamera = new THREE.PerspectiveCamera(45, document.body.clientWidth / document.body.clientHeight, 1, 10);
 
     backgroundRenderer = new THREE.WebGLRenderer({ antialias: true });
     backgroundRenderer.setPixelRatio(window.devicePixelRatio);
-    backgroundRenderer.setSize(window.innerWidth, window.innerHeight);
+    backgroundRenderer.setSize(document.body.clientWidth, document.body.clientHeight);
 
     const backgroundCanvas = backgroundRenderer.domElement;
     backgroundCanvas.setAttribute("class", "threejs-canvas");
@@ -44,8 +44,8 @@ async function init(modelPath) {
 
     scene = new THREE.Scene();
 
-    camera = new THREE.PerspectiveCamera(45, width / height, 1, 10);
-    camera.position.set(0, 1, 9);
+    camera = new THREE.PerspectiveCamera(45, width / height, 1, 20);
+    camera.position.set(0, .7, 10);
 
     try {
         await addHandModel(modelPath);
@@ -98,31 +98,31 @@ function addEffects() {
     saoPass.params.output = SAOPass.OUTPUT.Default;
     composer.addPass(saoPass);
 
-    let smaaPass = new SMAAPass(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
+    let smaaPass = new SMAAPass(document.body.clientWidth * renderer.getPixelRatio(), document.body.clientHeight * renderer.getPixelRatio());
     composer.addPass(smaaPass);
 }
 
 function addGradientBackground() {
     let backgroundCanvas = document.createElement("canvas");
-    backgroundCanvas.width = window.innerWidth;
-    backgroundCanvas.height = window.innerHeight;
+    backgroundCanvas.width = document.body.clientWidth;
+    backgroundCanvas.height = document.body.clientHeight;
 
     let context = backgroundCanvas.getContext("2d");
 
     let gradient = context.createRadialGradient(
-        window.innerWidth / 2,
-        window.innerHeight / 2,
-        window.innerWidth / 6, // inner radius
-        window.innerWidth / 2,
-        window.innerHeight / 2,
-        window.innerHeight      // outer radius
+        document.body.clientWidth / 2,
+        document.body.clientHeight / 2,
+        document.body.clientWidth / 6, // inner radius
+        document.body.clientWidth / 2,
+        document.body.clientHeight / 2,
+        document.body.clientHeight      // outer radius
     );
 
     gradient.addColorStop(0, "#4f4f4f");
     gradient.addColorStop(1, "#303030");
 
     context.fillStyle = gradient;
-    context.fillRect(0, 0, window.innerWidth, window.innerHeight);
+    context.fillRect(0, 0, document.body.clientWidth, document.body.clientHeight);
 
     let backgroundTexture = new THREE.CanvasTexture(backgroundCanvas);
     backgroundScene.background = backgroundTexture;
@@ -272,9 +272,9 @@ function buildAnimSequence(word) {
 }
 
 function fingerspell(word, onFinishCallback) {
-    console.log(word)
+    // console.log(word)
     let actionSequence = buildAnimSequence(word);
-    console.log(actionSequence)
+    // console.log(actionSequence)
 
     isPlaying = true;
     mixer.timeScale = speed;
@@ -353,25 +353,26 @@ function handleWindowResize() {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
-    backgroundCamera.aspect = window.innerWidth, window.innerHeight;
+    backgroundCamera.aspect = document.body.clientWidth, document.body.clientHeight;
     backgroundCamera.updateProjectionMatrix();
 
-    backgroundRenderer.setSize(window.innerWidth, window.innerHeight);
+    backgroundRenderer.setSize(document.body.clientWidth, document.body.clientHeight);
     renderer.setSize(width, height);
 
-    backgroundComposer.setSize(window.innerWidth, window.innerHeight);
+    backgroundComposer.setSize(document.body.clientWidth, document.body.clientHeight);
     composer.setSize(width, height);
 }
 
 // preserve aspect ratio for mobile/vertical displays so the hand would always have room for slide animations
 function recalculateDimensions() {
     let lowerAspect = 1.07;
+    let height = document.getElementById("ui-container").offsetTop + document.getElementById("ui-container").clientHeight;
     return {
-        width: window.innerWidth,
-        height: window.innerWidth / window.innerHeight <= lowerAspect ? (window.innerWidth / lowerAspect) * 0.8 : window.innerHeight
+        width: document.body.clientWidth,
+        height: document.body.clientWidth / height <= lowerAspect ? (document.body.clientWidth / lowerAspect) * 0.8 : height
     };
 }
 
 window.addEventListener('resize', handleWindowResize, false);
 
-export { init, animate, fingerspell, setHandAngle, setAnimSpeed, setQuality };
+export { init, animate, fingerspell, setHandAngle, setAnimSpeed, setQuality, handleWindowResize };
